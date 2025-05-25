@@ -175,5 +175,4 @@ cython_debug/
 .pypirc
 
 .apptainer/
-.apptainer
 .vscode/
