@@ -1,0 +1,70 @@
+Bootstrap: docker
+From: nvidia/cuda:11.8.0-base-ubuntu22.04
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    git \
+    build-essential
+
+    echo "==> Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    if [ -f /root/.local/bin/env ]; then
+        . /root/.local/bin/env
+    elif [ -f /root/.local/env ]; then
+        . /root/.local/env
+    else
+        export PATH="/root/.local/bin:$PATH"
+    fi
+    
+    uv --version
+    if [ $? -ne 0 ]; then
+        echo "Error: uv command not found after attempting to set PATH."
+        ls -l /root/.local/bin/uv
+        exit 1
+    fi
+
+    PYTHON_VERSION_TO_INSTALL="3.11.12"
+    echo "==> Installing Python ${PYTHON_VERSION_TO_INSTALL} with uv..."
+    uv python install "${PYTHON_VERSION_TO_INSTALL}"
+
+    uv python find "${PYTHON_VERSION_TO_INSTALL}" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to install or find Python ${PYTHON_VERSION_TO_INSTALL} via uv."
+        exit 1
+    fi
+
+    echo "==> Cleaning up build dependencies..."
+    apt-get purge -y --auto-remove build-essential
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export PATH="/root/.local/bin:$PATH"
+
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+
+%runscript
+    echo "Apptainer container with uv and Python is ready."
+    echo "This container provides a base environment. You need to create and activate"
+    echo "a uv virtual environment within your mounted lecture directory."
+    echo ""
+    echo "Example workflow after 'apptainer shell ...':"
+    echo "  1. cd /workspace/lectureX  (where lectureX is your mounted lecture directory)"
+    echo "  2. uv venv .venv -p 3.11.12  # Create venv named '.venv'"
+    echo "  3. source .venv/bin/activate             # Activate the venv"
+    echo "  4. uv pip install -r requirements.txt    # Install lecture-specific packages"
+    echo "  5. jupyter lab --ip=0.0.0.0 --port=8888 "
+    echo ""
+    echo "Use 'apptainer shell --nv [--network=host] --bind /path/to/host/DL_Basics:/workspace your_image.sif' to start."
+
+%labels
+    AUthor toshiyuki mannen
+    Version 1.1.0
+    CUDA_Base_Version 11.8.0
+    Python_Installed_By_uv 3.11.12
+    Description "Base Apptainer with uv and Python. Create lecture-specific venvs on demand."

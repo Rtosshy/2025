@@ -176,3 +176,4 @@ cython_debug/
 
 .apptainer/
 .vscode/
+*.sif
