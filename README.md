@@ -1,6 +1,6 @@
 cd apptainer_image
 
-apptainer build <DEF_FILE_NAME>.def <SIF_FILE_NAME>.sif
+apptainer build <SIF_FILE> <DEF_FILE>
 
 cd ..
 
